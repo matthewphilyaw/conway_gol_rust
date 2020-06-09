@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::rc::Rc;
 
 type CellCoordinate = u64;
 type Cell = (CellCoordinate, CellCoordinate);
@@ -98,25 +99,26 @@ struct NeighborStatus {
 }
 
 struct GOLGenerationIterator {
-    current_gen: HashSet<Cell>
+    current_gen: Rc<HashSet<Cell>>
 }
 
 impl GOLGenerationIterator {
     fn new(seed: Vec<Cell>) -> GOLGenerationIterator {
         let gen_zero = seed.into_iter().collect();
         GOLGenerationIterator {
-            current_gen: gen_zero
+            current_gen: Rc::new(gen_zero)
         }
     }
 }
 
 impl Iterator for GOLGenerationIterator {
-    type Item = HashSet<Cell>;
-    fn next(&mut self) -> Option<HashSet<Cell>> {
-        let current_gen = self.current_gen.to_owned();
-        let next_gen = compute_next_gen(&self.current_gen);
+    type Item = Rc<HashSet<Cell>>;
+    fn next(&mut self) -> Option<Rc<HashSet<Cell>>> {
+        let current_gen = self.current_gen.clone();
 
-        self.current_gen = next_gen;
+        let next_gen = compute_next_gen(&*current_gen);
+
+        self.current_gen = Rc::new(next_gen);
 
         Some(current_gen)
     }
@@ -202,7 +204,9 @@ fn main() {
 
     // gen zero is the seed state so you have to take 2 to get the first generation after
     // the seed.
-    for gen in iter.take(10) {
+    for gen_ref in iter.take(10) {
+        let gen = &*gen_ref;
+
         let row_end: CellCoordinate = 20;
         let col_end: CellCoordinate = 20;
 
@@ -211,7 +215,7 @@ fn main() {
                 if gen.contains(&(row, col)) {
                     print!("x  ");
                 } else {
-                    print!("-  ");
+                    print!(".  ");
                 }
             }
             println!();
