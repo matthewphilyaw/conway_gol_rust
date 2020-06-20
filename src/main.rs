@@ -113,10 +113,8 @@ impl GOLGenerationIterator {
 impl Iterator for GOLGenerationIterator {
     type Item = HashSet<Cell>;
     fn next(&mut self) -> Option<HashSet<Cell>> {
-        let current_gen = self.current_gen.to_owned();
         let next_gen = compute_next_gen(&self.current_gen);
-
-        self.current_gen = next_gen;
+        let current_gen = std::mem::replace(&mut self.current_gen, next_gen);
 
         Some(current_gen)
     }
